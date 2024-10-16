@@ -1,0 +1,113 @@
+-- Drop existing tables if they exist (optional, for starting fresh)
+DROP TABLE IF EXISTS `cart_item`;
+DROP TABLE IF EXISTS `order_item`;
+DROP TABLE IF EXISTS `order_table`;
+DROP TABLE IF EXISTS `payment_table`;
+DROP TABLE IF EXISTS `cart`;
+DROP TABLE IF EXISTS `product`;
+DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `token`;
+
+-- Create the Users table
+CREATE TABLE `users` (
+    uuid CHAR(36) PRIMARY KEY,                    -- User ID (UUID)
+    user_id INT AUTO_INCREMENT UNIQUE,            -- Internal user ID (must be unique)
+    first_name VARCHAR(100) NOT NULL,             -- User's first name
+    last_name VARCHAR(100) NOT NULL,              -- User's last name
+    email VARCHAR(255) UNIQUE NOT NULL,           -- User's email (must be unique)
+    password VARCHAR(255) NOT NULL,               -- User's hashed password
+    birthdate DATE NOT NULL,                      -- User's birthdate
+    email_verified_at DATETIME DEFAULT NULL,      -- Email verification timestamp
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- When the account was created
+    role ENUM('buyer', 'seller') NOT NULL,        -- Role (Only buyer or seller during registration)
+    verification_token VARCHAR(64) DEFAULT NULL   -- Email verification token
+);
+
+-- Create the Tokens Table
+CREATE TABLE `token` (
+    token_id INT AUTO_INCREMENT PRIMARY KEY,      -- Token ID
+    uuid CHAR(36),                                -- Link to the users table (UUID)
+    auth_token VARCHAR(255) NOT NULL,             -- Authentication token
+    session_token VARCHAR(255) DEFAULT NULL,      -- Session token for active sessions
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Token creation time
+    FOREIGN KEY (uuid) REFERENCES users(uuid) ON DELETE CASCADE
+);
+
+CREATE TABLE password_resets ( 
+    id INT AUTO_INCREMENT PRIMARY KEY, 
+    email VARCHAR(255) NOT NULL, 
+    token VARCHAR(255) NOT NULL, 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP );
+
+-- Create the Cart table
+CREATE TABLE `cart` (
+    cart_id INT(11) NOT NULL AUTO_INCREMENT,      -- Cart ID
+    user_id INT(20) NOT NULL,                     -- User ID
+    add_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Time added
+    PRIMARY KEY (cart_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Create the Cart Item table
+CREATE TABLE `cart_item` (
+    cart_item_id INT(11) NOT NULL AUTO_INCREMENT, -- Cart Item ID
+    user_id INT(11) NOT NULL,                     -- User ID
+    product_id INT(11) NOT NULL,                  -- Product ID
+    quantity INT(11) NOT NULL,                    -- Quantity
+    PRIMARY KEY (cart_item_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (product_id) REFERENCES product(product_id)
+);
+
+-- Create the Order Table
+CREATE TABLE `order_table` (
+    order_id INT(11) NOT NULL AUTO_INCREMENT,     -- Order ID
+    user_id INT(11) NOT NULL,                     -- User ID
+    order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Order date
+    total_amount DECIMAL(10,10) NOT NULL,         -- Total amount
+    status VARCHAR(50) NOT NULL,                  -- Order status
+    payment_method VARCHAR(50) NOT NULL,          -- Payment method
+    PRIMARY KEY (order_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Create the Order Item table
+CREATE TABLE `order_item` (
+    order_item_id INT(11) NOT NULL AUTO_INCREMENT, -- Order Item ID
+    order_id INT(11) NOT NULL,                      -- Order ID
+    user_id INT(11) NOT NULL,                       -- User ID
+    product_id INT(11) NOT NULL,                    -- Product ID
+    quantity INT(11) NOT NULL,                      -- Quantity
+    price DECIMAL(10,5) NOT NULL,                   -- Price
+    PRIMARY KEY (order_item_id),
+    FOREIGN KEY (order_id) REFERENCES order_table(order_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (product_id) REFERENCES product(product_id)
+);
+
+-- Create the Payment Table
+CREATE TABLE `payment_table` (
+    payment_id INT(11) NOT NULL AUTO_INCREMENT,    -- Payment ID
+    order_id INT(11) NOT NULL,                     -- Order ID
+    user_id INT(11) NOT NULL,                      -- User ID
+    payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Payment date
+    payment_amount DECIMAL(10,10) NOT NULL,        -- Payment amount
+    payment_status VARCHAR(50) NOT NULL,           -- Payment status
+    PRIMARY KEY (payment_id),
+    FOREIGN KEY (order_id) REFERENCES order_table(order_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Create the Product table
+CREATE TABLE `product` (
+    product_id INT(11) NOT NULL AUTO_INCREMENT,    -- Product ID
+    product_name VARCHAR(50) NOT NULL,             -- Product name
+    description TEXT NOT NULL,                      -- Product description
+    price DECIMAL(10,10) NOT NULL,                 -- Product price
+    stock_quantity INT(11) NOT NULL,               -- Stock quantity
+    category VARCHAR(50) NOT NULL,                 -- Product category
+    size VARCHAR(50) NOT NULL,                     -- Product size
+    color VARCHAR(50) NOT NULL,                    -- Product color
+    product_image TEXT NOT NULL,                    -- Product image URL
+    PRIMARY KEY (product_id)
+);
